@@ -9,14 +9,20 @@ from tqdm import tqdm
 def extract_information(html_content, file_name):
     soup = BeautifulSoup(html_content, 'html.parser')
     
-    # Найти intent из первого pre блока
+    # Найти intent и overall_difficulty из первого pre блока
     intent = None
+    overall_difficulty = None
     first_pre = soup.find('pre')
     if first_pre:
         pre_text = first_pre.get_text()
         intent_match = re.search(r'intent: (.+)', pre_text)
         if intent_match:
             intent = intent_match.group(1)
+        
+        # Извлечь overall_difficulty
+        difficulty_match = re.search(r'overall_difficulty: (\w+)', pre_text)
+        if difficulty_match:
+            overall_difficulty = difficulty_match.group(1)
     
     # Найти все страницы (New Page blocks)
     pages = soup.find_all('h2', string='New Page')
@@ -95,6 +101,7 @@ def extract_information(html_content, file_name):
     
     return {
         'intent': intent,
+        'overall_difficulty': overall_difficulty,  # Добавляем информацию о сложности
         'pages': results
     }
 
@@ -140,6 +147,7 @@ def process_directory(directory_path, output_dir="processed_data"):
                     # Извлекаем информацию из HTML
                     result = extract_information(html_content, base_filename)
                     intent = result['intent']
+                    overall_difficulty = result['overall_difficulty']  # Получаем сложность
                     
                     # Обрабатываем страницы и сохраняем изображения
                     for page in result['pages']:
@@ -158,9 +166,10 @@ def process_directory(directory_path, output_dir="processed_data"):
                             # Удаляем бинарные данные
                             del page['image_data']
                         
-                        # Добавляем информацию об intent и folder к данным страницы
+                        # Добавляем информацию к данным страницы
                         page_info = {
                             'intent': intent,
+                            'overall_difficulty': overall_difficulty,  # Добавляем сложность
                             'folder': folder,
                             'file_name': base_filename,
                             'page_number': page['page_number'],
